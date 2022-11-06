@@ -1,0 +1,6 @@
+.ccls
+.ccls-cache
+.gdb_history
+core*
+aursearch
+a.out
