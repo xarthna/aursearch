@@ -4,7 +4,7 @@ CFLAGS=-march=native -g3 -O0 -std=gnu11 -pedantic -Wall -Wextra -Wfloat-equal -W
 default: build
 
 build: clean
-	$(CC) $(CFLAGS) -lcurl -ljson-c -o aursearch main.c util.c
+	$(CC) $(CFLAGS) -lcurl -ljson-c -o bin/aursearch src/main.c src/print.c src/request.c
 
 clean:
-	rm -rf aursearch
+	rm -rf bin/aursearch
