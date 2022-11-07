@@ -1,10 +1,30 @@
 #include "print.h"
-#include "request.h"
+#include <json-c/json_object.h>
+#include <stdio.h>
+
+#define RESULT_NAME_PROP "Name"
+#define RESULT_DESCRIPTION_PROP "Description"
+#define RESULT_VERSION_PROP "Version"
+#define RESULT_CLONE_PROP "Clone"
+#define RESULT_FORMAT_STR_SIZE 30
+
+typedef struct json_object *search_result;
 
 char result_format_str[RESULT_FORMAT_STR_SIZE];
 
-void set_column_sizes(struct array_list *search_results,
-                      struct column_sizes *cols) {
+static const char *get_string_prop(search_result result, const char *prop_name);
+
+static int get_json_str_len(search_result result, const char *prop_name);
+
+static const char *get_string_prop(search_result result, const char *prop_name) {
+  return json_object_get_string(json_object_object_get(result, prop_name));
+}
+
+static int get_json_str_len(search_result result, const char *prop_name) {
+  return json_object_get_string_len(json_object_object_get(result, prop_name));
+}
+
+void set_column_sizes(struct array_list *search_results, struct column_sizes *cols) {
   int name_length;
   int description_length;
   int version_length;
@@ -28,14 +48,13 @@ void set_column_sizes(struct array_list *search_results,
 }
 
 void set_result_print_format(struct column_sizes *cols) {
-  snprintf(result_format_str, RESULT_FORMAT_STR_SIZE,
-           "%%-%ds\t%%-%ds\t%%-%ds\t%%-s\n", cols->name, cols->description,
-           cols->version);
+  snprintf(result_format_str, RESULT_FORMAT_STR_SIZE, "%%-%ds\t%%-%ds\t%%-%ds\t%%-s\n", cols->name,
+           cols->description, cols->version);
 }
 
 void print_header() {
-  printf(result_format_str, RESULT_NAME_PROP, RESULT_DESCRIPTION_PROP,
-         RESULT_VERSION_PROP, RESULT_CLONE_PROP);
+  printf(result_format_str, RESULT_NAME_PROP, RESULT_DESCRIPTION_PROP, RESULT_VERSION_PROP,
+         RESULT_CLONE_PROP);
 }
 
 void print_results(struct array_list *search_results) {

@@ -5,15 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
- * TODO: Wrap long output and fit to terminal size
- *       Sort param, Raw Line Based Output, Raw Json output params
- */
+// TODO: Wrap long output and fit to terminal size
+// Sort param, Raw Line Based Output, Raw Json output params
+static void cleanup(struct JsonString *mem, CURL *curl);
 
-void cleanup(struct MemoryStruct *chunk, CURL *curl);
-
-void cleanup(struct MemoryStruct *chunk, CURL *curl) {
-  free(chunk->memory);
+static void cleanup(struct JsonString *mem, CURL *curl) {
+  free(mem->memory);
   curl_easy_cleanup(curl);
 }
 
@@ -25,17 +22,17 @@ int main(int argc, char *argv[]) {
 
   struct array_list *results;
   struct column_sizes cols = {.name = 0, .description = 0, .version = 0};
-  struct MemoryStruct chunk = {.memory = malloc(1), .size = 0};
-  CURL *curl = prepare_request(argv[1], &chunk);
+  struct JsonString mem = {.memory = malloc(1), .size = 0};
+  CURL *curl = prepare_request(argv[1], &mem);
 
   if (curl) {
     make_request(curl);
-    results = parse_results(&chunk);
+    results = parse_results(&mem);
     set_column_sizes(results, &cols);
     set_result_print_format(&cols);
     print_header();
     print_results(results);
-    cleanup(&chunk, curl);
+    cleanup(&mem, curl);
     return 0;
   }
 }

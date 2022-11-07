@@ -1,38 +1,17 @@
 #include "request.h"
+#include <json-c/json_tokener.h>
+#include <stdlib.h>
+#include <string.h>
 
-CURL *prepare_request(char *search_param, struct MemoryStruct *chunk) {
-  char aur_endpoint[TOTAL_ENDPOINT_FORMAT_STR_SIZE];
-  snprintf(aur_endpoint, TOTAL_ENDPOINT_FORMAT_STR_SIZE, ENDPOINT_FORMAT_STR,
-           search_param);
+#define USER_AGENT "libcurl-agent/1.0"
+#define ENDPOINT_FORMAT_STR "https://aur.archlinux.org/rpc/?v=5&type=search&arg=%s"
+#define ENDPOINT_FORMAT_STR_SIZE 130
 
-  CURL *curl = curl_easy_init();
-  curl_easy_setopt(curl, CURLOPT_URL, aur_endpoint);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)chunk);
-  curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
-  return curl;
-}
+static size_t json_data_callback(void *contents, size_t size, size_t nmemb, void *userp);
 
-void make_request(CURL *curl) {
-  CURLcode response = curl_easy_perform(curl);
-
-  if (response != CURLE_OK) {
-    fprintf(stderr, "error: %s\n", curl_easy_strerror(response));
-    exit(1);
-  }
-}
-
-struct array_list *parse_results(struct MemoryStruct *chunk) {
-  struct json_object *json = json_tokener_parse(chunk->memory);
-  struct json_object *results_ptr = json_object_object_get(json, "results");
-  return json_object_get_array(results_ptr);
-}
-
-size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb,
-                           void *userp) {
+static size_t json_data_callback(void *contents, size_t size, size_t nmemb, void *userp) {
   size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+  struct JsonString *mem = (struct JsonString *)userp;
 
   char *ptr = realloc(mem->memory, mem->size + realsize + 1);
   if (ptr == NULL) {
@@ -48,10 +27,30 @@ size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb,
   return realsize;
 }
 
-const char *get_string_prop(search_result result, const char *prop_name) {
-  return json_object_get_string(json_object_object_get(result, prop_name));
+CURL *prepare_request(char *search_param, struct JsonString *mem) {
+  char aur_endpoint[ENDPOINT_FORMAT_STR_SIZE];
+  snprintf(aur_endpoint, ENDPOINT_FORMAT_STR_SIZE, ENDPOINT_FORMAT_STR, search_param);
+
+  CURL *curl = curl_easy_init();
+  curl_easy_setopt(curl, CURLOPT_URL, aur_endpoint);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, json_data_callback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)mem);
+  curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+  return curl;
 }
 
-int get_json_str_len(search_result result, const char *prop_name) {
-  return json_object_get_string_len(json_object_object_get(result, prop_name));
+void make_request(CURL *curl) {
+  CURLcode response = curl_easy_perform(curl);
+
+  if (response != CURLE_OK) {
+    fprintf(stderr, "error: %s\n", curl_easy_strerror(response));
+    exit(1);
+  }
+}
+
+struct array_list *parse_results(struct JsonString *mem) {
+  struct json_object *json = json_tokener_parse(mem->memory);
+  struct json_object *results_ptr = json_object_object_get(json, "results");
+  return json_object_get_array(results_ptr);
 }
