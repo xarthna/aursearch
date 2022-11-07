@@ -50,7 +50,7 @@ void print_results(struct array_list *search_results) {
     name = get_string_prop(result, RESULT_NAME_PROP);
     desc = get_string_prop(result, RESULT_DESCRIPTION_PROP);
     version = get_string_prop(result, RESULT_VERSION_PROP);
-    snprintf(&clone[26], strlen(name) + 1, "%s", name);
+    snprintf(&clone[26], 73, "%s", name);
     printf(result_format_str, name, desc, version, clone);
   }
 }
