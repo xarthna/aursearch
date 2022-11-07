@@ -1,10 +1,22 @@
 CC=gcc
-CFLAGS=-march=native -g3 -O0 -std=gnu11 -pedantic -Wall -Wextra -Wfloat-equal -Wwrite-strings -Wstrict-prototypes -Wundef -Wshadow
+CFLAGS=-march=native -std=c11 -pedantic -Wall -Wextra -Wfloat-equal -Wwrite-strings -Wstrict-prototypes -Wundef -Wshadow
+LDLIBS=-lcurl -ljson-c
+SOURCE_FILES=src/*.c
+
+ifdef DEBUG
+	CFLAGS+=-g3 -O0
+else
+	CFLAGS+=-O2
+endif
+
+CFLAGS+=-o bin/aursearch
 
 default: build
 
 build: clean
-	$(CC) $(CFLAGS) -lcurl -ljson-c -o bin/aursearch src/main.c src/print.c src/request.c
+	$(CC) $(CFLAGS) $(LDLIBS) $(SOURCE_FILES)
 
 clean:
 	rm -rf bin/aursearch
+
+.PHONY: clean
