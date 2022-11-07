@@ -4,3 +4,4 @@
 core*
 aursearch
 a.out
+.clang-format
